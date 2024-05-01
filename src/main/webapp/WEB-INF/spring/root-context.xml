@@ -1,0 +1,32 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring.xsd">
+
+	<context:component-scan base-package="com.djts.ddeul.service"/>
+	
+	<!-- HikariCP 설정   -->
+	<bean name="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+	    <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+	    <property name="jdbcUrl" value="jdbc:oracle:thin:@localhost:1521:xe"/> <!-- 호스트, 포트 및 데이터베이스 이름에 맞게 수정해야 합니다 -->
+	    <property name="username" value="thoreausawyer"/>
+	    <property name="password" value="daegumian"/>
+	    <property name="connectionTimeout" value="30000"/> <!-- DB연결을 30초만 유지, 너무 길면 그만큼 가용할 수 있는 연결의 횟수가 줄어드는 것 -->
+	</bean>
+
+    <!-- HikariCP 데이터 소스 이용-->
+    <bean name="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+        <constructor-arg ref="hikariConfig"/>
+    </bean>
+
+    <!--  Mybatis 설정  -->
+    <bean class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <property name="mapperLocations" value="classpath:mappers/*.xml"/>
+    </bean>
+
+    <mybatis-spring:scan base-package="com.djts.ddeul.mappers"/>
+	
+</beans>

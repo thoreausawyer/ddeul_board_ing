@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.djts.ddeul.mappers.BoardMapper">
+
+	<!-- 재사용하기 위한 쿼리 -->
+	<sql id="search">
+		<if test="(types != null and keyword != null)">
+		    <foreach collection="types" item="type" open=" and ( " separator=" OR " close=" )"> <!-- 키쿼드 감싸는 부분 -->
+		        <choose>
+		            <when test='type.equals("T")'> <!-- 작은 따옴포와 큰따옴표가 바뀌면 쿼리문이 안먹음 신기함 -->
+		                title LIKE '%' || #{keyword} || '%'
+		            </when>
+		            <when test='type.equals("C")'> <!-- 작은 따옴포와 큰따옴표가 바뀌면 쿼리문이 안먹음 신기함 -->
+		                content LIKE '%' || #{keyword} || '%'
+		            </when>
+		            <when test='type.equals("W")'> <!-- 작은 따옴포와 큰따옴표가 바뀌면 쿼리문이 안먹음 신기함 -->
+		                writer LIKE '%' || #{keyword} || '%'
+		            </when>
+		        </choose>
+		    </foreach>
+		</if>
+	</sql>
+
+	<!-- 리스트 조회 -->
+	<select id="getList" resultType="BoardVO">
+		select * from springdb where bno > 0 order by bno desc
+	</select>
+	
+	<!-- 페이징처리된 리스트 -->
+    <select id="getPage" resultType="BoardVO">
+    <!-- * 첫번째 방법*
+		 select *
+		from (
+			select 
+				rownum AS rnum, springdb.*
+			from
+				 springdb
+			where
+				<![CDATA[
+				rownum <= #{pageNum} * #{amount}
+				]]>
+			)
+		where bno > 0 and
+			<![CDATA[
+			#{skip} < rnum
+			]]>
+		order by bno desc	-->
+    
+    <!-- * 두번째 방법* -->
+    SELECT *
+    FROM (
+        SELECT 
+            springdb.*,
+            ROW_NUMBER() OVER (ORDER BY bno DESC) AS row_num
+        FROM
+            springdb
+    )
+    WHERE
+        row_num BETWEEN #{skip} AND #{pageNum} * #{amount}
+        <include refid="search"/>
+    
+    </select>
+    
+    <select id="getTotal" resultType="int">
+    	select count(bno)
+    	from
+    		springdb
+    	where bno > 0
+    	<include refid="search"/>
+    </select>
+	
+	<!-- 게시글 등록 --> <!-- insert 문 실행 후에 데이터베이스에서 생성된 키를 MyBatis가 가져와서 해당 객체의 bno 속성에 자동으로 설정 -->
+	<insert id="insert" useGeneratedKeys="true" keyProperty="bno">
+	    <selectKey keyProperty="bno" resultType="long" order="BEFORE">
+	        select springdb_seq.nextval from dual
+	    </selectKey>
+	    insert into springdb (bno, title, content, writer)
+	    values (#{bno}, #{title}, #{content}, #{writer})
+	</insert>
+
+	<!-- 게시글 조회 -->
+    <select id="select" resultType="BoardVO">
+        select * from springdb where bno = #{bno}
+    </select>
+
+	<!-- 게시글 수정 -->
+    <update id="update">
+        update springdb
+        set title = #{title},
+        	content = #{content}
+        where bno = #{bno}
+    </update>
+    
+    
+    
+</mapper>
